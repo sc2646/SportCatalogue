@@ -4,8 +4,11 @@
 		<div class="col-md-10"></div>
 		<div class="col-md-2 text-right">
 			<div class="col-md-2 text-right">
+			{% if not session['logged_in'] %}
+			<a href = "{{url_for('showLogin')}}"> Click here to Log in </a>
+			{% else %}
 			<a href="{{url_for('disconnect')}}">Click Here to Log out </a>
-			
+			{% endif %}
 			</div>
 
 		</div>
@@ -44,9 +47,6 @@
 				</button>
 			</a>		
 		</div>
-		<div class="col-md-2 text-left">
-			<a href = "{{url_for('showLogin')}}">Clink here to log in </a>
-			</div>
 		<div class="col-md-1"></div>
 	</div>
 	{% for sport in sports %}

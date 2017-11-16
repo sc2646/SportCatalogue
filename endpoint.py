@@ -108,6 +108,7 @@ def gconnect():
     login_session['email'] = data['email']
     # ADD PROVIDER TO LOGIN SESSION
     login_session['provider'] = 'google'
+    login_session['logged_in'] = True
 
     # see if user exists, if it doesn't make a new one
     user_id = getUserID(data["email"])
@@ -144,9 +145,9 @@ def gdisconnect():
     if result['status'] == '200':
         del login_session['access_token']
         del login_session['gplus_id']
-        del login_session['username']
-        del login_session['email']
-        del login_session['picture']
+        # del login_session['username']
+        # del login_session['email']
+        # del login_session['picture']
         response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -193,6 +194,7 @@ def fbconnect():
     login_session['username'] = data["name"]
     login_session['email'] = data["email"]
     login_session['facebook_id'] = data["id"]
+    login_session['logged_in'] = True
 
     # The token must be stored in the login_session in order to properly logout
     login_session['access_token'] = token
@@ -255,6 +257,7 @@ def disconnect():
         del login_session['picture']
         del login_session['user_id']
         del login_session['provider']
+        login_session['logged_in'] = False
         flash("You have successfully been logged out.")
         return redirect(url_for('showSports'))
     else:
@@ -272,6 +275,7 @@ def createUser(login_session):
 
 
 def getUserInfo(user_id):
+    print user_id
     user = session.query(User).filter_by(id=user_id).one()
     return user
 
@@ -315,8 +319,14 @@ def sportsJSON():
 def showSports():
     sports = session.query(Sport).order_by(asc(Sport.name))
     if 'username' not in login_session:
-        return render_template('publichomepage.html', sports=sports)
-    return render_template('homepage.html', sports=sports)
+        # print login_session['username']
+        # print login_session['logged_in']
+        # print "123"
+        return render_template('publichomepage.html',
+                               sports=sports, session=login_session)
+    # print "========"
+    return render_template('homepage.html',
+                           sports=sports, session=login_session)
 
 
 # create a new sport
@@ -325,7 +335,8 @@ def newSport():
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
-        newSport = Sport(name=request.form['name'])
+        newSport = Sport(name=request.form['name'],
+                         user_id=login_session['user_id'])
         session.add(newSport)
         flash('New Sport %s added!' % newSport.name)
         session.commit()
@@ -381,8 +392,9 @@ def deleteSport(sport_id):
 @app.route("/sports/<int:sport_id>/catologue/")
 def showCatologue(sport_id):
     sport = session.query(Sport).filter_by(id=sport_id).one()
-    items = session.query(CatologueItem).filter_by(sport_id=sport_id).all()
+    print sport.user_id
     creator = getUserInfo(sport.user_id)
+    items = session.query(CatologueItem).filter_by(sport_id=sport_id).all()
     if ('username' not in login_session or
             creator.id != login_session['user_id']):
         return render_template('publicCatologueMenu.html',
